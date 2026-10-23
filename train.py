@@ -26,8 +26,15 @@ def main():
     print("Số nhãn Train:", len(y_train))
 
     # 2. Học TF-IDF và biến đổi tập Train
-    vectorizer = TfidfVectorizer()
+    vectorizer = TfidfVectorizer(stop_words="english")
+    # Học từ vựng và IDF chỉ trên Train
     X_train_tfidf = vectorizer.fit_transform(X_train)
+    example = "the meeting is about the project"
+
+    print("\nCác từ giữ lại trong câu ví dụ:")
+    print(vectorizer.build_analyzer()(example))
+
+    print("Kích thước TF-IDF Train:", X_train_tfidf.shape)
 
     print("Kích thước TF-IDF Train:", X_train_tfidf.shape)
 
