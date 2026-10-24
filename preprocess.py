@@ -42,7 +42,9 @@ def main():
     print(df.duplicated(subset=["text"]).sum())
 
     # 3. Giữ các cột cần thiết và loại trùng ban đầu
+    # Keep the original casing for the numeric uppercase-ratio feature.
     df = df[["text", "label_num"]].copy()
+    df["raw_text"] = df["text"]
 
     rows_before = len(df)
 

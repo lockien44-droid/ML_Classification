@@ -24,30 +24,21 @@ RESULTS_DIR = BASE_DIR / "results"
 def main():
     # 1. Đọc tập Test đã được làm sạch
     test_df = pd.read_csv(PROCESSED_DIR / "test.csv")
+    if "raw_text" not in test_df.columns:
+        raise ValueError("Thiếu raw_text trong test.csv. Hãy chạy preprocess.py trước.")
 
-    X_test = test_df["text"]
+    X_test = test_df[["text", "raw_text"]]
     y_test = test_df["label_num"]
 
-    # 2. Tải TF-IDF và hai mô hình
-    vectorizer = joblib.load(
-        ARTIFACTS_DIR / "tfidf_vectorizer.joblib"
-    )
-
-    lr_model = joblib.load(
-        ARTIFACTS_DIR / "logistic_regression.joblib"
-    )
-
-    svm_model = joblib.load(
-        ARTIFACTS_DIR / "svm.joblib"
-    )
-
-    # 3. Biến đổi Test bằng TF-IDF đã học
-    X_test_tfidf = vectorizer.transform(X_test)
+    # 2. Tải các pipeline đã chọn cấu hình bằng CV
+    lr_model = joblib.load(ARTIFACTS_DIR / "lr_pipeline.joblib")
+    svm_model = joblib.load(ARTIFACTS_DIR / "svm_pipeline.joblib")
 
     print("Số email Test:", len(X_test))
     print("Số nhãn Test:", len(y_test))
-    print("Kích thước TF-IDF Test:", X_test_tfidf.shape)
-    print("Đã tải Logistic Regression và Linear SVM.")
+    print("Cấu hình LR:", _pipeline_configuration(lr_model))
+    print("Cấu hình SVM:", _pipeline_configuration(svm_model))
+    print("Đã tải hai pipeline đã fit.")
 
     # 4. Chuẩn bị nơi lưu kết quả và danh sách mô hình
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -67,7 +58,7 @@ def main():
 
     # 5. Dự đoán và đánh giá từng mô hình
     for name, model in models.items():
-        predictions = model.predict(X_test_tfidf)
+        predictions = model.predict(X_test)
 
         # Lưu dự đoán để phân tích lại mà không cần predict lần nữa
         predictions_by_model[name] = predictions
@@ -229,6 +220,16 @@ def main():
             print("LR dự đoán:", labels[row["lr_prediction"]])
             print("SVM dự đoán:", labels[row["svm_prediction"]])
             print("Nội dung:", row["text"][:500])
+
+
+def _pipeline_configuration(pipeline):
+    features = pipeline.named_steps["features"]
+    transformers = features.named_transformers_
+    if "numeric" in transformers:
+        return "C"
+    if transformers["tfidf"].ngram_range == (1, 2):
+        return "B"
+    return "A"
 
 
 if __name__ == "__main__":
