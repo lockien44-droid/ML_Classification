@@ -8,7 +8,7 @@ from sklearn.pipeline import Pipeline
 
 from Model.features import FEATURE_CONFIGS, create_feature_transformer
 from Model.logistic_regression import create_model as create_lr_model
-from Model.Svm import create_model as create_svm_model
+from Model.svm import create_model as create_svm_model
 
 
 BASE_DIR = Path(__file__).resolve().parent
