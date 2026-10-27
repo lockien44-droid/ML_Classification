@@ -26,6 +26,19 @@ FEATURE_CONFIGS = {
 }
 
 
+# Detect link-related markers even when the source dataset has spaces or other
+# formatting that prevents a complete URL from matching. This counts markers,
+# not validated URLs, so it is named accordingly throughout the project.
+URL_MARKER_PATTERN = re.compile(r"\b(?:https?|www)\b", flags=re.IGNORECASE)
+
+
+def count_url_markers(text):
+    """Count http/https/www markers in original email text."""
+    if text is None:
+        return 0
+    return len(URL_MARKER_PATTERN.findall(str(text)))
+
+
 def extract_numeric_features(raw_texts):
     """Extract email style counts from the original, case-preserving text."""
     texts = np.asarray(raw_texts, dtype=object).reshape(-1)
@@ -40,7 +53,7 @@ def extract_numeric_features(raw_texts):
         )
         rows.append([
             len(re.findall(r"\b\w+\b", text)),
-            len(re.findall(r"(?:https?://|www\.)\S+", text, flags=re.IGNORECASE)),
+            count_url_markers(text),
             text.count("!"),
             text.count("$"),
             uppercase_ratio,

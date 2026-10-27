@@ -82,10 +82,11 @@ Các lựa chọn:
 - 2: Đánh giá và so sánh hai mô hình.
 - 3: Huấn luyện hai mô hình.
 - 4: Tiền xử lý và chia dữ liệu.
+- 5: Tạo biểu đồ và thống kê EDA trên tập Train.
 - 0: Thoát.
 
 Khi chạy lần đầu, chọn theo thứ tự:
-4, 3, 2, 1.
+4, 5, 3, 2, 1.
 
 Sau khi đã chạy bước 4 và bước 3, có thể chọn trực tiếp 1 hoặc 2.
 
@@ -93,6 +94,7 @@ Chạy riêng từng bước:
 
 ```powershell
 python preprocess.py
+python eda.py
 python train.py
 python evaluate.py
 python predict.py
@@ -106,8 +108,9 @@ cần huấn luyện lại trước khi đánh giá và dự đoán.
 | File | Chức năng |
 |---|---|
 | preprocess.py | Làm sạch, loại trùng, chia và lưu dữ liệu |
+| eda.py | Tạo biểu đồ EDA và bảng thống kê từ tập Train |
 | Model/logistic_regression.py | Khởi tạo Logistic Regression |
-| Model/Svm.py | Khởi tạo Linear SVM |
+| Model/svm.py | Khởi tạo Linear SVM |
 | Model/features.py | Cấu hình A/B/C và trích xuất đặc trưng số |
 | train.py | Chạy CV, chọn cấu hình, fit lại và lưu pipeline |
 | evaluate.py | Tính chỉ số, vẽ confusion matrix và phân tích lỗi |
@@ -130,6 +133,10 @@ artifacts/:
 - svm_pipeline.joblib
 
 results/:
+- eda/label_distribution.png
+- eda/email_length_distribution.png
+- eda/email_signal_rates.png
+- eda/eda_summary.csv
 - cv_results.csv
 - metrics.csv
 - confusion_matrix_lr.png
@@ -142,10 +149,10 @@ CV dùng Stratified 5-fold, shuffle và random_state=42. Số liệu dưới đ�
 
 | Mô hình | A: TF-IDF unigram | B: TF-IDF unigram + bigram | C: B + đặc trưng số | Chọn |
 |---|---:|---:|---:|---|
-| LR | 97,21% ± 0,65% | 96,10% ± 0,98% | 92,16% ± 0,79% | A |
-| Linear SVM | 97,80% ± 0,53% | 98,21% ± 0,61% | 98,01% ± 0,57% | B |
+| LR | 97,21% ± 0,65% | 96,10% ± 0,98% | 89,82% ± 0,92% | A |
+| Linear SVM | 97,80% ± 0,53% | 98,21% ± 0,61% | 98,13% ± 0,55% | B |
 
-C bổ sung số từ, URL, dấu `!`, dấu `$` và tỷ lệ chữ hoa trên nội dung gốc. `preprocess.py` giữ cột `raw_text` để không mất thông tin chữ hoa; các đặc trưng số được chuẩn hóa riêng trong mỗi fold.
+C bổ sung số từ, số dấu hiệu URL (`http`, `https`, `www`), dấu `!`, dấu `$` và tỷ lệ chữ hoa trên nội dung gốc. Số dấu hiệu URL không đồng nghĩa số URL đầy đủ. Trên Train, bộ đếm nhận diện dấu hiệu này ở 127/2.745 email Ham (4,63%) và 415/1.170 email Spam (35,47%). `preprocess.py` giữ cột `raw_text` để không mất thông tin chữ hoa; các đặc trưng số được chuẩn hóa riêng trong mỗi fold.
 
 Precision, Recall và F1 trong bảng Test bên dưới được tính cho lớp spam. Tham số SVM dùng `C=1.0`, `max_iter=20000`, `random_state=42`.
 
