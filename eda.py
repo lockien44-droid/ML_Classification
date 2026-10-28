@@ -8,7 +8,7 @@ from Model.features import count_url_markers, extract_numeric_features
 
 
 BASE_DIR = Path(__file__).resolve().parent
-PROCESSED_DIR = BASE_DIR / "Data" / "processed"
+PROCESSED_DIR = BASE_DIR / "data" / "processed"
 EDA_DIR = BASE_DIR / "results" / "eda"
 LABEL_NAMES = {0: "Ham", 1: "Spam"}
 LABEL_COLORS = {0: "#4C78A8", 1: "#F58518"}

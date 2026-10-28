@@ -12,7 +12,7 @@ from Model.svm import create_model as create_svm_model
 
 
 BASE_DIR = Path(__file__).resolve().parent
-PROCESSED_DIR = BASE_DIR / "Data" / "processed"
+PROCESSED_DIR = BASE_DIR / "data" / "processed"
 ARTIFACTS_DIR = BASE_DIR / "artifacts"
 RESULTS_DIR = BASE_DIR / "results"
 CV_RANDOM_STATE = 42

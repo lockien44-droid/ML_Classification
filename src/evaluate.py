@@ -15,8 +15,8 @@ from sklearn.metrics import (
 
 
 # Đường dẫn các thư mục
-BASE_DIR = Path(__file__).resolve().parent
-PROCESSED_DIR = BASE_DIR / "Data" / "processed"
+BASE_DIR = Path(__file__).resolve().parent.parent
+PROCESSED_DIR = BASE_DIR / "data" / "processed"
 ARTIFACTS_DIR = BASE_DIR / "artifacts"
 RESULTS_DIR = BASE_DIR / "results"
 

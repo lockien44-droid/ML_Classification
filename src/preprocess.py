@@ -6,9 +6,9 @@ from sklearn.model_selection import train_test_split
 
 
 # Đường dẫn dùng trong bước tiền xử lý
-BASE_DIR = Path(__file__).resolve().parent
-DATA_PATH = BASE_DIR / "Data" / "Raw" / "spam_ham_dataset.csv"
-PROCESSED_DIR = BASE_DIR / "Data" / "processed"
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_PATH = BASE_DIR / "data" / "raw" / "spam_ham_dataset.csv"
+PROCESSED_DIR = BASE_DIR / "data" / "processed"
 
 
 # Hàm làm sạch dùng chung cho dữ liệu và email mới
@@ -18,6 +18,77 @@ def clean_text(text):
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
+
+def prepare_dataset(df):
+    """Select, clean, and deduplicate email data; return it with diagnostics."""
+    required_columns = {"text", "label_num"}
+    missing_columns = required_columns - set(df.columns)
+    if missing_columns:
+        raise ValueError(
+            "Thiếu cột bắt buộc: " + ", ".join(sorted(missing_columns))
+        )
+
+    prepared = df[["text", "label_num"]].copy()
+    before_missing = len(prepared)
+    prepared = prepared.dropna(subset=["text", "label_num"]).copy()
+    missing_rows_removed = before_missing - len(prepared)
+
+    prepared["text"] = prepared["text"].astype(str)
+    # Keep original casing for numeric email features used by model pipelines.
+    prepared["raw_text"] = prepared["text"]
+
+    before_raw_dedup = len(prepared)
+    prepared = prepared.drop_duplicates(subset=["text"], keep="first").reset_index(drop=True)
+    raw_duplicates_removed = before_raw_dedup - len(prepared)
+
+    sample_before = prepared["text"].iloc[0] if not prepared.empty else ""
+    prepared["text"] = prepared["text"].map(clean_text)
+    empty_after_cleaning = int(prepared["text"].eq("").sum())
+    cleaned_duplicates = int(prepared.duplicated(subset=["text"]).sum())
+
+    label_counts = prepared.groupby("text")["label_num"].nunique()
+    conflicting_labels = int(label_counts.gt(1).sum())
+
+    before_cleaned_dedup = len(prepared)
+    prepared = prepared.drop_duplicates(subset=["text"], keep="first").reset_index(drop=True)
+    cleaned_duplicates_removed = before_cleaned_dedup - len(prepared)
+
+    diagnostics = {
+        "missing_rows_removed": missing_rows_removed,
+        "raw_duplicates_removed": raw_duplicates_removed,
+        "cleaned_duplicates": cleaned_duplicates,
+        "cleaned_duplicates_removed": cleaned_duplicates_removed,
+        "empty_after_cleaning": empty_after_cleaning,
+        "conflicting_labels": conflicting_labels,
+        "sample_before": sample_before,
+        "sample_after": prepared["text"].iloc[0] if not prepared.empty else "",
+    }
+    return prepared, diagnostics
+
+
+def split_dataset(df, test_size=0.2, random_state=42):
+    """Create stratified train/test data while keeping feature-label rows aligned."""
+    return train_test_split(
+        df,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=df["label_num"],
+    )
+
+
+def save_prepared_datasets(df, train_df, test_df, output_dir=PROCESSED_DIR):
+    """Save cleaned, train, and test CSV files and return their paths."""
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    paths = {
+        "clean": output_dir / "emails_clean.csv",
+        "train": output_dir / "train.csv",
+        "test": output_dir / "test.csv",
+    }
+    df.to_csv(paths["clean"], index=False, encoding="utf-8")
+    train_df.to_csv(paths["train"], index=False, encoding="utf-8")
+    test_df.to_csv(paths["test"], index=False, encoding="utf-8")
+    return paths
 
 def main():
     # 1. Đọc dữ liệu gốc
@@ -120,7 +191,7 @@ def main():
         index=False,
         encoding="utf-8"
     )
-        # Lấy những nội dung xuất hiện trong cả Train và Test
+    # Lấy những nội dung xuất hiện trong cả Train và Test
     shared_texts = set(train_df["text"]) & set(test_df["text"])
 
     print("\nSố nội dung trùng giữa Train và Test:", len(shared_texts))
